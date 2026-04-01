@@ -17,7 +17,7 @@ export const authMiddleware = (req, res, next) => {
 
     // Extract token from "Bearer <token>"
     const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    if (!authHeader.startsWith('Bearer ')) {
       throw new AppError('Invalid authorization header format. Use: Bearer <token>', 401);
     }
 
@@ -26,19 +26,26 @@ export const authMiddleware = (req, res, next) => {
     // Verify token
     const decoded = AuthService.verifyToken(token);
 
+    if (!decoded || !decoded.id) {
+      throw new AppError('Invalid token payload', 401);
+    }
+
     // Attach user info ke request object
     req.user = {
       id: decoded.id,
       email: decoded.email,
     };
 
-    Logger.debug('Token verified', {
-      userId: decoded.id,
-      email: decoded.email,
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      Logger.debug('Token verified', {
+        userId: decoded.id,
+        email: decoded.email,
+      });
+    }
 
     next();
   } catch (error) {
+    // Handle custom AppError
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({
         status: 'error',
@@ -47,6 +54,19 @@ export const authMiddleware = (req, res, next) => {
       });
     }
 
+    // Handle JWT errors (invalid / expired)
+    if (
+      error.name === 'JsonWebTokenError' ||
+      error.name === 'TokenExpiredError'
+    ) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid or expired token',
+        statusCode: 401,
+      });
+    }
+
+    // Unknown Error (server error)
     Logger.error('Auth middleware error', error);
     return res.status(500).json({
       status: 'error',

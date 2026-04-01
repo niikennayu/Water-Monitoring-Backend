@@ -107,18 +107,24 @@ export class AuthService {
       };
     } catch (error) {
       if (error instanceof AppError) throw error;
+
       Logger.error('Error during login', error);
-      throw new AppError('Failed to login', 500);
+
+      throw new AppError('Invalid email or password', 401);
     }
   }
 
   static generateToken(userId, email) {
-    const token = jwt.sign(
+    if (!userId || !email) {
+      throw new Error('generateToken requires userId and email');
+    }
+
+    return jwt.sign(
       { id: userId, email },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-    return token;
+    return token
   }
 
   static verifyToken(token) {
@@ -136,7 +142,7 @@ export class AuthService {
     }
   }
 
-  static async getCurentUser(userId) {
+  static async getCurrentUser(userId) {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },

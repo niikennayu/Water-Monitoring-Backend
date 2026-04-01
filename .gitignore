@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 
 # Environment variables
@@ -37,3 +36,6 @@ prisma/migrations/
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary files (Claude / AI tools)
+tmpclaude-*

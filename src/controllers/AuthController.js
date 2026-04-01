@@ -60,7 +60,11 @@ export class AuthController {
   static getCurrentUser = asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
-    const user = await AuthService.getCurentUser(userId);
+    const user = await AuthService.getCurrentUser(userId);
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
 
     res.success(user, 'Current user fetched successfully', 200);
   });
