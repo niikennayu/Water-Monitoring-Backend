@@ -1,4 +1,4 @@
-import prisma from '../config/prisma.js';
+import prisma from '../config/db.js';
 import crypto from 'crypto';
 
 export class DeviceService {
