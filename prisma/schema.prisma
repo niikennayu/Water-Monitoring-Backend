@@ -18,7 +18,23 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  devices   Device[]
+
   @@map("users")
+}
+
+model Device {
+  id        String   @id @default(uuid())
+  name      String
+  location  String?
+  apiKey    String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  data      WaterQuality[]
+
+  @@map("devices")
 }
 
 model WaterQuality {
@@ -27,10 +43,11 @@ model WaterQuality {
   ph          Float
   turbidity   Float
   dissolvedOxygen Float
-  location    String
+  deviceId    String
   timestamp   DateTime @default(now())
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  device Device @relation(fields: [deviceId], references: [id])
 
   @@map("water_quality")
 }
