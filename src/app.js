@@ -7,6 +7,8 @@ import { responseHandler } from './middleware/responseHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import deviceRoutes from './routes/deviceRoute.js';
+import iotRoutes from './routes/iotRoutes.js';
 
 dotenv.config();
 
@@ -68,6 +70,12 @@ app.use('/api/v1/auth', authRoutes);
 
 // Mount user routes
 app.use('/api/v1/users', userRoutes);
+
+// Mount device routes
+app.use('/api/v1/devices', deviceRoutes);
+
+// Mount IoT routes
+app.use('/api/v1/iot', iotRoutes);
 
 // ============================================
 // 404 Handler
