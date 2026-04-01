@@ -1,4 +1,6 @@
 import express from 'express';
+import apiKeyMiddleware from '../middleware/apiKeyMiddleware.js';
+
 const router = express.Router();
 
 router.post('/water-usage', (req, res) => {
