@@ -33,6 +33,7 @@ model Device {
 
   user      User     @relation(fields: [userId], references: [id])
   data      WaterQuality[]
+  waterUsages WaterUsage[]
 
   @@map("devices")
 }
@@ -50,4 +51,17 @@ model WaterQuality {
   device Device @relation(fields: [deviceId], references: [id])
 
   @@map("water_quality")
+}
+
+model WaterUsage {
+  id        String   @id @default(uuid())
+  flowRate  Float
+  volume    Float
+  deviceId  String
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id])
+
+  @@map("water_usage")
 }
