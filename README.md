@@ -27,7 +27,7 @@ water-monitoring-backend/
 │   │   └── UserService.js
 │   ├── routes/           # API routes
 │   │   └── userRoutes.js
-│   ├── models/           # Data models (jika diperlukan)
+│   ├── models/           # Data models (optional)
 │   ├── middleware/       # Custom middlewares
 │   │   ├── errorHandler.js
 │   │   └── responseHandler.js
