@@ -4,24 +4,11 @@ import prisma from '../config/db.js';
 
 const router = express.Router();
 
-/**
- * Dashboard Routes
- * 
- * GET /api/v1/dashboard - Get dashboard data
- * Query parameter: customer_number (opsional)
- * 
- * Ambil:
- * - Total penggunaan air berdasarkan customer
- * - Penggunaan per hari/bulan
- * - Join antara customers, devices, dan water_usages
- */
-
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const { customer_number } = req.query;
 
-    // Ambil user/customer
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -43,12 +30,10 @@ router.get('/', authMiddleware, async (req, res) => {
       });
     }
 
-    // Hitung statistik
     const devices = user.devices;
     const totalDevices = devices.length;
     const activeDevices = devices.filter(d => d.status !== 'inactive').length;
 
-    // Hitung total penggunaan air
     let totalUsage = 0;
     const allUsages = [];
 
@@ -59,8 +44,9 @@ router.get('/', authMiddleware, async (req, res) => {
       });
     });
 
-    // Ambil reading terbaru
-    const latestReading = allUsages.length > 0 ? allUsages[0] : null;
+    // latest reading benar (di-sort global)
+    const latestReading = allUsages
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0] || null;
 
     const dashboardData = {
       customer: {
@@ -72,7 +58,7 @@ router.get('/', authMiddleware, async (req, res) => {
       summary: {
         totalDevices,
         activeDevices,
-        totalWaterUsage: totalUsage.toFixed(2),
+        totalWaterUsage: parseFloat(totalUsage.toFixed(2)), // 🔥 FIX
         totalUsageUnit: 'liter'
       },
       devices: devices.map(d => ({
@@ -83,13 +69,12 @@ router.get('/', authMiddleware, async (req, res) => {
         latestUsage: d.waterUsages[0] || null
       })),
       latestReadings: allUsages.slice(0, 5),
+      latestReading,
       timestamp: new Date().toISOString()
     };
 
-    res.status(200).json({
-      status: 'success',
-      data: dashboardData
-    });
+    // Pakai responseHandler
+    res.success(dashboardData, 'Dashboard fetched successfully', 200);
 
   } catch (error) {
     console.error('[Dashboard Error]', error);

@@ -19,10 +19,18 @@ router.post('/water-usage', apiKeyMiddleware, async (req, res) => {
     const device = req.device; // dari middleware API key
 
     // Validasi input
-    if (device_id === undefined || forward === undefined || backward === undefined) {
+    if (device_id === null || forward === null || backward === null) {
       return res.status(400).json({
         status: 'error',
         message: 'device_id, forward, dan backward wajib diisi'
+      });
+    }
+
+    // Validasi tipe data
+    if (typeof forward !== 'number' || typeof backward !== 'number') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'forward dan backward harus berupa angka'
       });
     }
 
@@ -36,6 +44,13 @@ router.post('/water-usage', apiKeyMiddleware, async (req, res) => {
 
     // Hitung cumulative = forward - backward
     const cumulative = forward - backward;
+
+    if (cumulative < 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Nilai cumulative tidak valid (forward < backward)'
+      });
+    }
 
     // Simpan data penggunaan air ke database
     const data = await prisma.waterUsage.create({
