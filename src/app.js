@@ -5,10 +5,15 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { responseHandler } from './middleware/responseHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import userRoutes from './routes/userRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import deviceRoutes from './routes/deviceRoute.js';
-import iotRoutes from './routes/iotRoutes.js';
+
+// Import new route files with new naming convention
+import authRoutes from './routes/auth.js';
+import customerRoutes from './routes/customers.js';
+import deviceRoutes from './routes/devices.js';
+import iotRoutes from './routes/iot.js';
+import dashboardRoutes from './routes/dashboard.js';
+import billingRoutes from './routes/billing.js';
+import paymentRoutes from './routes/payment.js';
 
 dotenv.config();
 
@@ -65,17 +70,14 @@ app.get('/api/v1', (req, res) => {
   });
 });
 
-// Mount auth routes
+// Mount all routes
 app.use('/api/v1/auth', authRoutes);
-
-// Mount user routes
-app.use('/api/v1/users', userRoutes);
-
-// Mount device routes
+app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/devices', deviceRoutes);
-
-// Mount IoT routes
 app.use('/api/v1/iot', iotRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/billing', billingRoutes);
+app.use('/api/v1/payment', paymentRoutes);
 
 // ============================================
 // 404 Handler

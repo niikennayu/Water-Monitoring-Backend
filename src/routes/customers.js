@@ -3,7 +3,16 @@ import { UserController } from '../controllers/UserController.js';
 
 const router = express.Router();
 
-// User routes
+/**
+ * Customer Routes (Users Management)
+ *
+ * - GET /api/v1/customers - Get all users/customers
+ * - GET /api/v1/customers/:id - Get customer by ID
+ * - POST /api/v1/customers - Create new customer
+ * - PUT /api/v1/customers/:id - Update customer
+ * - DELETE /api/v1/customers/:id - Delete customer
+ */
+
 router.get('/', UserController.getAllUsers);
 router.get('/:id', UserController.getUserById);
 router.post('/', UserController.createUser);

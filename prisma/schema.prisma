@@ -11,14 +11,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String
+  name            String?
+  customer_number String?  @unique
+  address         String?
+  phone           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   devices   Device[]
+  bills     Bill[]
 
   @@map("users")
 }
@@ -29,39 +33,81 @@ model Device {
   location  String?
   apiKey    String   @unique
   userId    String
+  status    String   @default("active") // active, inactive, maintenance
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  data      WaterQuality[]
-  waterUsages WaterUsage[]
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data          WaterQuality[]
+  waterUsages   WaterUsage[]
 
   @@map("devices")
 }
 
 model WaterQuality {
-  id          String   @id @default(uuid())
-  temperature Float
-  ph          Float
-  turbidity   Float
+  id              String   @id @default(uuid())
+  temperature     Float
+  ph              Float
+  turbidity       Float
   dissolvedOxygen Float
-  deviceId    String
-  timestamp   DateTime @default(now())
-  createdAt   DateTime @default(now())
+  deviceId        String
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
 
-  device Device @relation(fields: [deviceId], references: [id])
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@map("water_quality")
 }
 
 model WaterUsage {
-  id        String   @id @default(uuid())
-  flowRate  Float
-  volume    Float
-  deviceId  String
-  timestamp DateTime @default(now())
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  forward     Float    // Meter forward reading
+  backward    Float    // Meter backward reading
+  cumulative  Float    // Calculated: forward - backward
+  flowRate    Float?   // Optional: untuk backward compatibility
+  volume      Float?   // Optional: untuk backward compatibility
+  deviceId    String
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
 
-  device Device @relation(fields: [deviceId], references: [id])
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@map("water_usage")
+}
+
+model Bill {
+  id            String   @id @default(uuid())
+  customerId    String
+  billNumber    String   @unique
+  billingPeriod String   // Format: YYYY-MM
+  billingDate   DateTime @default(now())
+  dueDate       DateTime
+  waterUsage    Float    // Total water usage in liter
+  unitPrice     Float    // Price per unit (liter)
+  totalAmount   Float    // Total bill amount
+  status        String   @default("pending") // pending, paid, overdue, cancelled
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer  User      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payments  Payment[]
+
+  @@map("bills")
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  billId          String
+  amount          Float    // Payment amount
+  paymentMethod   String   // cash, transfer, card, e-wallet, etc
+  referenceNumber String   // Payment reference/receipt number
+  status          String   @default("pending") // pending, success, failed, cancelled
+  proofUrl        String?  // URL to payment proof
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
 }
