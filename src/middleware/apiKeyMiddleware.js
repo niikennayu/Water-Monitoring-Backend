@@ -1,54 +1,50 @@
 import prisma from '../config/db.js';
+import Logger from '../utils/logger.js';
 
+/**
+ * API Key Middleware
+ * Validates the x-api-key header against registered devices in the database.
+ * If valid, attaches the device object to req.device for downstream use.
+ *
+ * Note: This middleware is a general-purpose API key validator.
+ * For IoT endpoints that need deviceId ↔ apiKey cross-validation,
+ * the IoTController handles validation internally.
+ */
 const apiKeyMiddleware = async (req, res, next) => {
-    try {
-        const apiKey = req.headers['x-api-key'];
+  try {
+    const apiKey = req.headers['x-api-key'];
 
-        // Check API from request header
-        console.log("API KEY MASUK:", apiKey);
+    // Validate API key presence
+    if (!apiKey) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'API key is missing',
+      });
+    }
 
-        // Validation API key
-        if (!apiKey) {
-            return res.status(401).json({
-                status: 'error',
-                message: 'API key is missing'
-            });
-        }
+    // Find device by API key
+    const device = await prisma.device.findUnique({
+      where: { apiKey },
+    });
 
-        // Checking all devices in database
-        const allDevices = await prisma.device.findMany();
-        console.log("SEMUA DEVICE:", allDevices);
+    if (!device) {
+      Logger.warn('Invalid API key attempt', { apiKey: apiKey.substring(0, 8) + '...' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Invalid API key',
+      });
+    }
 
-        // Mencari device berdasarkan API key
-        const device = await prisma.device.findUnique({
-        where: {
-            apiKey: apiKey
-        }
-        });
-
-        // Result device
-        console.log("DEVICE DITEMUKAN:", device);
-
-        // In case the API key is invalid, device will be null
-        if (!device) {
-        return res.status(403).json({
-            status: 'error',
-            message: 'Invalid API key'
-        });
-        }
-
-        // Save to request
-        req.device = device;
-
-        next();
-
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({
-            status: 'error',
-            message: 'Internal server error'
-            });
-        }
-    };
+    // Attach device to request for downstream handlers
+    req.device = device;
+    next();
+  } catch (error) {
+    Logger.error('API key middleware error', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    });
+  }
+};
 
 export default apiKeyMiddleware;
