@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// This is your Prisma schema file
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,6 +16,7 @@ model User {
   customer_number String?  @unique
   address         String?
   phone           String?
+  role            String   @default("customer") // Penambahan role untuk akses admin/customer
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -33,12 +32,12 @@ model Device {
   location  String?
   apiKey    String   @unique
   userId    String
-  status    String   @default("active") // active, inactive, maintenance
+  status    String   @default("active")
   createdAt DateTime @default(now())
 
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  data          WaterQuality[]
-  waterUsages   WaterUsage[]
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data        WaterQuality[]
+  waterUsages WaterUsage[]
 
   @@map("devices")
 }
@@ -60,11 +59,11 @@ model WaterQuality {
 
 model WaterUsage {
   id          String   @id @default(uuid())
-  forward     Float    // Meter forward reading
-  backward    Float    // Meter backward reading
-  cumulative  Float    // Calculated: forward - backward
-  flowRate    Float?   // Optional: untuk backward compatibility
-  volume      Float?   // Optional: untuk backward compatibility
+  forward     Float    // Simulasi kenaikan jarum (m3)
+  backward    Float    @default(0) // Tidak masuk tagihan
+  cumulative  Float    // Total akumulasi untuk dashboard/billing
+  flowRate    Float?   // Opsional
+  volume      Float?   // Opsional
   deviceId    String
   timestamp   DateTime @default(now())
   createdAt   DateTime @default(now())
@@ -78,13 +77,13 @@ model Bill {
   id            String   @id @default(uuid())
   customerId    String
   billNumber    String   @unique
-  billingPeriod String   // Format: YYYY-MM
+  billingPeriod String   
   billingDate   DateTime @default(now())
   dueDate       DateTime
-  waterUsage    Float    // Total water usage in liter
-  unitPrice     Float    // Price per unit (liter)
-  totalAmount   Float    // Total bill amount
-  status        String   @default("pending") // pending, paid, overdue, cancelled
+  waterUsage    Float    // Dalam satuan m3
+  unitPrice     Float    // Harga per m3
+  totalAmount   Float    
+  status        String   @default("pending")
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -98,11 +97,11 @@ model Bill {
 model Payment {
   id              String   @id @default(uuid())
   billId          String
-  amount          Float    // Payment amount
-  paymentMethod   String   // cash, transfer, card, e-wallet, etc
-  referenceNumber String   // Payment reference/receipt number
-  status          String   @default("pending") // pending, success, failed, cancelled
-  proofUrl        String?  // URL to payment proof
+  amount          Float    
+  paymentMethod   String   
+  referenceNumber String   
+  status          String   @default("pending")
+  proofUrl        String?  
   description     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
