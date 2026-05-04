@@ -1,132 +1,139 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import prisma from '../config/db.js';
 import { AppError } from '../middleware/errorHandler.js';
 import Logger from '../utils/logger.js';
 
 export class AuthService {
+  /**
+   * Register a new user with role "customer" and auto-generated customer_number.
+   * @param {Object} data - { email, password, passwordConfirmation, name, address, phone }
+   */
   static async register(data) {
-    try {
-      const { email, password, passwordConfirm, name } = data;
+    const { email, password, passwordConfirmation, name, address, phone } = data;
 
-      // Validate input
-      if (!email || !password || !passwordConfirm) {
-        throw new AppError('Email, password, and password confirmation are required', 400);
-      }
-
-      if (password !== passwordConfirm) {
-        throw new AppError('Passwords do not match', 400);
-      }
-
-      if (password.length < 6) {
-        throw new AppError('Password must be at least 6 characters long', 400);
-      }
-
-      // Check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      if (existingUser) {
-        throw new AppError('Email already registered', 409);
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create user
-      const user = await prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          name: name || null,
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          createdAt: true,
-        },
-      });
-
-      Logger.info('User registered successfully', { userId: user.id, email: user.email });
-
-      // Generate JWT token
-      const token = this.generateToken(user.id, user.email);
-
-      return {
-        user,
-        token,
-      };
-    } catch (error) {
-      console.error('Error during registration:', error);
-      throw error;
+    // Validate required fields
+    if (!email || !password || !passwordConfirmation) {
+      throw new AppError('Email, password, and password confirmation are required', 400);
     }
+
+    // Validate password confirmation match
+    if (password !== passwordConfirmation) {
+      throw new AppError('Password and password confirmation do not match', 400);
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      throw new AppError('Password must be at least 6 characters long', 400);
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new AppError('Email already registered', 409);
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate unique customer number (format: CUST-XXXXXXXX)
+    const customerNumber = `CUST-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+    // Create user with role "customer"
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: name || null,
+        address: address || null,
+        phone: phone || null,
+        role: 'customer',
+        customer_number: customerNumber,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        customer_number: true,
+        address: true,
+        phone: true,
+        createdAt: true,
+      },
+    });
+
+    Logger.info('User registered successfully', { userId: user.id, email: user.email });
+
+    // Generate JWT token (includes role for RBAC)
+    const token = this.generateToken(user.id, user.email, user.role);
+
+    return { user, token };
   }
 
+  /**
+   * Login user and return user data with role and customer_number.
+   * @param {Object} data - { email, password }
+   */
   static async login(data) {
-    try {
-      const { email, password } = data;
+    const { email, password } = data;
 
-      // Validate input
-      if (!email || !password) {
-        throw new AppError('Email and password are required', 400);
-      }
-
-      // Find user by email
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      if (!user) {
-        throw new AppError('Invalid credentials', 401);
-      }
-
-      // Compare passwords
-      const passwordMatch = await bcrypt.compare(password, user.password);
-
-      if (!passwordMatch) {
-        throw new AppError('Invalid credentials', 401);
-      }
-
-      Logger.info('User logged in successfully', { userId: user.id, email: user.email });
-
-      // Generate JWT token
-      const token = this.generateToken(user.id, user.email);
-
-      // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-
-      return {
-        user: {
-          ...userWithoutPassword,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
-        token,
-      };
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      Logger.error('Error during login', error);
-
-      throw new AppError('Invalid email or password', 401);
+    // Validate input
+    if (!email || !password) {
+      throw new AppError('Email and password are required', 400);
     }
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new AppError('Invalid credentials', 401);
+    }
+
+    // Compare passwords
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      throw new AppError('Invalid credentials', 401);
+    }
+
+    Logger.info('User logged in successfully', { userId: user.id, email: user.email });
+
+    // Generate JWT token (includes role for RBAC)
+    const token = this.generateToken(user.id, user.email, user.role);
+
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      user: userWithoutPassword,
+      token,
+    };
   }
 
-  static generateToken(userId, email) {
+  /**
+   * Generate JWT token with user id, email, and role.
+   */
+  static generateToken(userId, email, role) {
     if (!userId || !email) {
       throw new Error('generateToken requires userId and email');
     }
 
     return jwt.sign(
-      { id: userId, email },
+      { id: userId, email, role: role || 'customer' },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-    return token
   }
 
+  /**
+   * Verify and decode JWT token.
+   */
   static verifyToken(token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -142,6 +149,10 @@ export class AuthService {
     }
   }
 
+  /**
+   * Get current user profile including role, customer_number, address, and phone.
+   * @param {string} userId
+   */
   static async getCurrentUser(userId) {
     try {
       const user = await prisma.user.findUnique({
@@ -150,6 +161,10 @@ export class AuthService {
           id: true,
           email: true,
           name: true,
+          role: true,
+          customer_number: true,
+          address: true,
+          phone: true,
           createdAt: true,
           updatedAt: true,
         },
