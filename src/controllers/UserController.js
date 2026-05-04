@@ -31,11 +31,14 @@ export class UserController {
   });
 
   static createUser = asyncHandler(async (req, res) => {
-    const { email, name } = req.body;
+    const { email, name, address, phone, password, role } = req.body;
 
     // Basic validation
     if (!email || email.trim() === '') {
       throw new AppError('Email is required', 400);
+    }
+    if (!password || password.trim() === '') {
+      throw new AppError('Password is required', 400);
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,7 +46,7 @@ export class UserController {
       throw new AppError('Invalid email format', 400);
     }
 
-    const user = await UserService.createUser({ email, name });
+    const user = await UserService.createUser({ email, name, address, phone, password, role });
     res.success(user, 'User created successfully', 201);
   });
 

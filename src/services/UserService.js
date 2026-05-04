@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import { AppError } from '../middleware/errorHandler.js';
 import Logger from '../utils/logger.js';
+import bcrypt from 'bcrypt';
 
 // Service layer - contains business logic
 export class UserService {
@@ -88,12 +89,20 @@ export class UserService {
 
   static async createUser(data) {
     try {
-      const { email, name } = data;
+      const { email, name, address, phone, password, role } = data;
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const customerNumber = `CUST-${Date.now()}`;
 
       const user = await prisma.user.create({
         data: {
           email,
-          name
+          name,
+          address,
+          phone,
+          password: hashedPassword,
+          role: role || 'customer',
+          customer_number: customerNumber
         },
         select: {
           id: true,
@@ -110,10 +119,10 @@ export class UserService {
       Logger.info('User created', { userId: user.id, email: user.email });
       return user;
     } catch (error) {
+      Logger.error('Detailed Error creating user:', error);
       if (error.code === 'P2002') {
-        throw new AppError('Email already exists', 409);
+        throw new AppError('Email or Customer Number already exists', 409);
       }
-      Logger.error('Error creating user', error);
       throw new AppError('Failed to create user', 500);
     }
   }
