@@ -19,6 +19,17 @@ export class UserController {
     res.success(user, 'User fetched successfully', 200);
   });
 
+  static getUserByCustomerNumber = asyncHandler(async (req, res) => {
+    const { customer_number } = req.params;
+
+    if (!customer_number || customer_number.trim() === '') {
+      throw new AppError('Customer number is required', 400);
+    }
+
+    const user = await UserService.getUserByCustomerNumber(customer_number);
+    res.success(user, 'Customer fetched successfully', 200);
+  });
+
   static createUser = asyncHandler(async (req, res) => {
     const { email, name } = req.body;
 

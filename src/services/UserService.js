@@ -57,6 +57,35 @@ export class UserService {
     }
   }
 
+  static async getUserByCustomerNumber(customer_number) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { customer_number },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          customer_number: true,
+          address: true,
+          phone: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      if (!user) {
+        throw new AppError('Customer not found', 404);
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      Logger.error('Error fetching customer by number', error);
+      throw new AppError('Failed to fetch customer', 500);
+    }
+  }
+
   static async createUser(data) {
     try {
       const { email, name } = data;
