@@ -12,6 +12,10 @@ const router = express.Router();
  * - GET /api/v1/devices - Get all devices for current user
  */
 
+// Static routes first
+router.post('/customer', authMiddleware, DeviceController.getDevicesByCustomer);
+
+// Dynamic routes and other verbs
 router.post('/', authMiddleware, DeviceController.create);
 router.get('/', authMiddleware, DeviceController.getAll);
 

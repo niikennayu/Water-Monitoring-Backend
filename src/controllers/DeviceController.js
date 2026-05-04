@@ -21,4 +21,16 @@ export class DeviceController {
 
     res.success(devices, 'Devices fetched', 200);
   });
+
+  static getDevicesByCustomer = asyncHandler(async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId || userId.trim() === '') {
+      throw new AppError('userId is required', 400);
+    }
+
+    const devices = await DeviceService.getDevices(userId);
+
+    res.success(devices, 'Devices fetched for customer', 200);
+  });
 }
