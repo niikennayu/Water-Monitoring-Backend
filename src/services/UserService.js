@@ -11,6 +11,10 @@ export class UserService {
           id: true,
           email: true,
           name: true,
+          role: true,
+          customer_number: true,
+          address: true,
+          phone: true,
           createdAt: true
         },
         orderBy: {
@@ -32,6 +36,10 @@ export class UserService {
           id: true,
           email: true,
           name: true,
+          role: true,
+          customer_number: true,
+          address: true,
+          phone: true,
           createdAt: true,
           updatedAt: true
         }
@@ -62,6 +70,10 @@ export class UserService {
           id: true,
           email: true,
           name: true,
+          role: true,
+          customer_number: true,
+          address: true,
+          phone: true,
           createdAt: true
         }
       });
@@ -89,6 +101,10 @@ export class UserService {
           id: true,
           email: true,
           name: true,
+          role: true,
+          customer_number: true,
+          address: true,
+          phone: true,
           updatedAt: true
         }
       });

@@ -146,3 +146,9 @@ export const roleMiddleware = (allowedRoles = []) => {
     }
   };
 };
+
+/**
+ * Middleware khusus untuk memverifikasi role admin.
+ * Jika bukan admin, mengembalikan status 403 Forbidden.
+ */
+export const isAdmin = roleMiddleware(['admin']);
