@@ -1,41 +1,23 @@
-import prisma from '../config/db.js';
-import { asyncHandler, AppError } from '../middleware/errorHandler.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { BillingService } from '../services/BillingService.js';
 
 export class BillingController {
-
-  // Generate tagihan
+  /**
+   * POST /api/v1/billing/generate
+   * Generate a new bill for a specific device.
+   */
   static generateBill = asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-
-    const usage = await prisma.waterUsage.aggregate({
-      where: { userId },
-      _sum: { cumulative: true }
-    });
-
-    const totalUsage = usage._sum.cumulative || 0;
-    const pricePerLiter = 0.01;
-
-    const totalAmount = totalUsage * pricePerLiter;
-
-    const bill = await prisma.bill.create({
-      data: {
-        userId,
-        totalAmount,
-        status: 'pending'
-      }
-    });
-
-    res.success(bill, 'Bill generated', 201);
+    const { deviceId, unitPrice } = req.body;
+    const bill = await BillingService.generateBillForDevice(deviceId, unitPrice);
+    res.success(bill, 'Bill generated successfully', 201);
   });
 
-  // Ambil semua tagihan
-  static getBills = asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-
-    const bills = await prisma.bill.findMany({
-      where: { userId }
-    });
-
-    res.success(bills, 'Bills fetched', 200);
+  /**
+   * GET /api/v1/billing/all
+   * Fetch all bills (Admin view).
+   */
+  static getAllBills = asyncHandler(async (req, res) => {
+    const bills = await BillingService.getAllBills();
+    res.success(bills, 'All bills fetched successfully', 200);
   });
 }

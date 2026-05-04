@@ -13,5 +13,6 @@ const router = express.Router();
 
 router.get('/', authMiddleware, DashboardController.getDashboard);
 router.get('/chart', authMiddleware, DashboardController.getChartData);
+router.get('/admin', authMiddleware, DashboardController.getAdminStats);
 
 export default router;

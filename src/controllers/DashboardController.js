@@ -1,5 +1,6 @@
 import prisma from '../config/db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
+import { DashboardService } from '../services/DashboardService.js';
 import Logger from '../utils/logger.js';
 
 /**
@@ -110,5 +111,14 @@ export class DashboardController {
     }));
 
     res.success(chartData, 'Chart data fetched successfully', 200);
+  });
+
+  /**
+   * GET /api/v1/dashboard/admin
+   * Fetch aggregate statistics for administrators.
+   */
+  static getAdminStats = asyncHandler(async (req, res) => {
+    const stats = await DashboardService.getAdminStats();
+    res.success(stats, 'Admin dashboard stats fetched successfully', 200);
   });
 }

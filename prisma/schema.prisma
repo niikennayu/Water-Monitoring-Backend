@@ -1,4 +1,3 @@
-// This is your Prisma schema file
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,30 +10,28 @@ datasource db {
 model User {
   id              String   @id @default(uuid())
   email           String   @unique
-  password        String
   name            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  password        String
   customer_number String?  @unique
   address         String?
   phone           String?
-  role            String   @default("customer") // Penambahan role untuk akses admin/customer
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  devices   Device[]
-  bills     Bill[]
+  role            String   @default("customer")
+  bills           Bill[]
+  devices         Device[]
 
   @@map("users")
 }
 
 model Device {
-  id        String   @id @default(uuid())
-  name      String
-  location  String?
-  apiKey    String   @unique
-  userId    String
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-
+  id          String         @id @default(uuid())
+  name        String
+  location    String?
+  apiKey      String         @unique
+  userId      String
+  createdAt   DateTime       @default(now())
+  status      String         @default("active")
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   data        WaterQuality[]
   waterUsages WaterUsage[]
@@ -48,48 +45,45 @@ model WaterQuality {
   ph              Float
   turbidity       Float
   dissolvedOxygen Float
-  deviceId        String
   timestamp       DateTime @default(now())
   createdAt       DateTime @default(now())
-
-  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId        String
+  device          Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@map("water_quality")
 }
 
 model WaterUsage {
-  id          String   @id @default(uuid())
-  forward     Float    // Simulasi kenaikan jarum (m3)
-  backward    Float    @default(0) // Tidak masuk tagihan
-  cumulative  Float    // Total akumulasi untuk dashboard/billing
-  flowRate    Float?   // Opsional
-  volume      Float?   // Opsional
-  deviceId    String
-  timestamp   DateTime @default(now())
-  createdAt   DateTime @default(now())
-
-  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  flowRate   Float?
+  volume     Float?
+  deviceId   String
+  timestamp  DateTime @default(now())
+  createdAt  DateTime @default(now())
+  forward    Float
+  backward   Float    @default(0)
+  cumulative Float
+  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@map("water_usage")
 }
 
 model Bill {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   customerId    String
-  billNumber    String   @unique
-  billingPeriod String   
-  billingDate   DateTime @default(now())
+  billNumber    String    @unique
+  billingPeriod String
+  billingDate   DateTime  @default(now())
   dueDate       DateTime
-  waterUsage    Float    // Dalam satuan m3
-  unitPrice     Float    // Harga per m3
-  totalAmount   Float    
-  status        String   @default("pending")
+  waterUsage    Float
+  unitPrice     Float
+  totalAmount   Float
+  status        String    @default("pending")
   notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  customer  User      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  payments  Payment[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  customer      User      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payments      Payment[]
 
   @@map("bills")
 }
@@ -97,16 +91,15 @@ model Bill {
 model Payment {
   id              String   @id @default(uuid())
   billId          String
-  amount          Float    
-  paymentMethod   String   
-  referenceNumber String   
+  amount          Float
+  paymentMethod   String
+  referenceNumber String
   status          String   @default("pending")
-  proofUrl        String?  
+  proofUrl        String?
   description     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  bill            Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }

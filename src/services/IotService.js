@@ -13,6 +13,7 @@ export class IotService {
       where: { apiKey }
     });
 
+    // Note: Properti device.location dan device.apiKey sekarang tersedia dari skema terbaru
     // 2. Jika apiKey tidak terdaftar, lempar error 401
     if (!device) {
       throw new AppError('Invalid API Key. Device not registered.', 401);
@@ -50,6 +51,7 @@ export class IotService {
 
     const waterUsage = await prisma.waterUsage.findMany({
       where: { deviceId },
+      include: { device: true },
       orderBy: { createdAt: 'desc' },
     });
 
