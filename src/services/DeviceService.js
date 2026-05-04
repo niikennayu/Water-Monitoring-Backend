@@ -15,7 +15,7 @@ static async createDevice(userId, data) {
     });
   }
 
-  static async getDevices(userId) {
+  static async getAllDevices(userId) {
     return prisma.device.findMany({
       where: { userId },
     });

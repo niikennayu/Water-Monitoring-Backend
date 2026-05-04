@@ -16,7 +16,7 @@ const router = express.Router();
 router.post('/customer', authMiddleware, DeviceController.getDevicesByCustomer);
 
 // Dynamic routes and other verbs
-router.post('/', authMiddleware, DeviceController.create);
-router.get('/', authMiddleware, DeviceController.getAll);
+router.post('/', authMiddleware, DeviceController.createDevice);
+router.get('/', authMiddleware, DeviceController.getAllDevices);
 
 export default router;

@@ -2,7 +2,7 @@ import { DeviceService } from '../services/DeviceService.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 
 export class DeviceController {
-  static create = asyncHandler(async (req, res) => {
+  static createDevice = asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
     if (!req.body.name) {
@@ -14,10 +14,10 @@ export class DeviceController {
     res.success(device, 'Device created', 201);
   });
 
-  static getAll = asyncHandler(async (req, res) => {
+  static getAllDevices = asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
-    const devices = await DeviceService.getDevices(userId);
+    const devices = await DeviceService.getAllDevices(userId);
 
     res.success(devices, 'Devices fetched', 200);
   });
@@ -29,7 +29,7 @@ export class DeviceController {
       throw new AppError('userId is required', 400);
     }
 
-    const devices = await DeviceService.getDevices(userId);
+    const devices = await DeviceService.getAllDevices(userId);
 
     res.success(devices, 'Devices fetched for customer', 200);
   });
