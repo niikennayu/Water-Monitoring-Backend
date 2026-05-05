@@ -121,4 +121,14 @@ export class DashboardController {
     const stats = await DashboardService.getAdminStats();
     res.success(stats, 'Admin dashboard stats fetched successfully', 200);
   });
+
+  /**
+   * GET /api/v1/dashboard/customer/:deviceId
+   * Fetch statistics for a specific device.
+   */
+  static getDeviceStats = asyncHandler(async (req, res) => {
+    const { deviceId } = req.params;
+    const stats = await DashboardService.getDeviceStats(deviceId);
+    res.success(stats, 'Device stats fetched successfully', 200);
+  });
 }

@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 export class DashboardService {
   static async getAdminStats() {
@@ -26,9 +27,37 @@ export class DashboardService {
 
     return {
       totalUnits: totalDevices,
-      totalConsumption: usageStats._sum.forward || 0,
+      totalConsumption: Math.round((usageStats._sum.forward || 0) * 100) / 100,
       totalRevenue: Math.round(revenueStats._sum.totalAmount || 0),
       locationOverview: locationStats
+    };
+  }
+
+  static async getDeviceStats(deviceId) {
+    const device = await prisma.device.findUnique({
+      where: { id: deviceId },
+      include: {
+        waterUsages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    if (!device) throw new AppError('Device not found', 404);
+
+    const usageStats = await prisma.waterUsage.aggregate({
+      where: { deviceId },
+      _sum: { forward: true }
+    });
+
+    return {
+      id: device.id,
+      name: device.name,
+      location: device.location,
+      status: device.status,
+      totalUsage: Math.round((usageStats._sum.forward || 0) * 100) / 100,
+      latestReading: device.waterUsages[0] || null
     };
   }
 }

@@ -32,6 +32,7 @@ export class BillingService {
     const newBill = await prisma.bill.create({
       data: {
         customerId: device.userId,
+        deviceId: device.id,
         billNumber,
         billingPeriod,
         dueDate,
@@ -45,9 +46,32 @@ export class BillingService {
     return newBill;
   }
 
+  static async getBillsByUserId(userId) {
+    return await prisma.bill.findMany({
+      where: { customerId: userId },
+      include: {
+        device: {
+          select: {
+            name: true,
+            location: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   static async getAllBills() {
     return await prisma.bill.findMany({
-      include: { customer: true },
+      include: { 
+        customer: true,
+        device: {
+          select: {
+            name: true,
+            location: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
   }

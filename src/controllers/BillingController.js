@@ -20,4 +20,14 @@ export class BillingController {
     const bills = await BillingService.getAllBills();
     res.success(bills, 'All bills fetched successfully', 200);
   });
+
+  /**
+   * GET /api/v1/billing/my-bills
+   * Fetch bills for the authenticated customer.
+   */
+  static getMyBills = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const bills = await BillingService.getBillsByUserId(userId);
+    res.success(bills, 'Your bills fetched successfully', 200);
+  });
 }

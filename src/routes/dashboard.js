@@ -14,5 +14,6 @@ const router = express.Router();
 router.get('/', authMiddleware, DashboardController.getDashboard);
 router.get('/chart', authMiddleware, DashboardController.getChartData);
 router.get('/admin', authMiddleware, DashboardController.getAdminStats);
+router.get('/customer/:deviceId', authMiddleware, DashboardController.getDeviceStats);
 
 export default router;
