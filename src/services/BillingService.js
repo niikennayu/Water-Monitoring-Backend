@@ -48,7 +48,12 @@ export class BillingService {
 
   static async getBillsByUserId(userId) {
     return await prisma.bill.findMany({
-      where: { customerId: userId },
+      where: {
+        OR: [
+          { customerId: userId },
+          { device: { userId: userId } }
+        ]
+      },
       include: {
         device: {
           select: {
