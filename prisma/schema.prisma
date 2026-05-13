@@ -14,28 +14,28 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   password        String
-  customer_number String?  @unique
+  customer_number String?  @unique // P0001
   address         String?
   phone           String?
   role            String   @default("customer")
-  bills           Bill[]
+  
+  // Relasi ke Bill
+  bills           Bill[]   
   devices         Device[]
 
   @@map("users")
 }
 
 model Device {
-  id          String         @id @default(uuid())
-  name        String
-  location    String?
-  apiKey      String         @unique
-  userId      String
-  createdAt   DateTime       @default(now())
-  status      String         @default("active")
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  data        WaterQuality[]
-  waterUsages WaterUsage[]
-  bills       Bill[]
+  uid          String         @id @db.VarChar(16) // ID Sensor (4898-...)
+  deviceId     String         @unique @db.VarChar(16) // ID User/Perangkat (P0001)
+  name         String?
+  location     String?
+  userId       String?        @db.Uuid
+  user         User?          @relation(fields: [userId], references: [id])
+  waterUsages  WaterUsage[]
+  waterQuality WaterQuality[]
+  bills        Bill[]
 
   @@map("devices")
 }
@@ -48,63 +48,66 @@ model WaterQuality {
   dissolvedOxygen Float
   timestamp       DateTime @default(now())
   createdAt       DateTime @default(now())
-  deviceId        String
-  device          Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId        String   @db.VarChar(16)
+  // Perbaikan: references merujuk ke [uid] di model Device
+  device          Device   @relation(fields: [deviceId], references: [uid], onDelete: Cascade)
 
   @@map("water_quality")
 }
 
 model WaterUsage {
-  id         String   @id @default(uuid())
+  id         String   @id @default(uuid()) @db.Uuid
+  id_user    String   @db.VarChar(10) // P0001
+  UID        String   @db.VarChar(16) // 4898-...
   flowRate   Float?
-  volume     Float?
-  deviceId   String
+  volume     BigInt?
+  cumulative BigInt?
   timestamp  DateTime @default(now())
-  createdAt  DateTime @default(now())
-  forward    Float
-  backward   Float    @default(0)
-  cumulative Float
-  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  
+  // Perbaikan: references merujuk ke [uid] di model Device
+  device     Device   @relation(fields: [UID], references: [uid])
 
   @@map("water_usage")
 }
 
 model Bill {
-  id            String    @id @default(uuid())
-  customerId    String
-  billNumber    String    @unique
-  billingPeriod String
-  billingDate   DateTime  @default(now())
-  dueDate       DateTime
-  waterUsage    Float
-  unitPrice     Float
-  totalAmount   Float
-  status        String    @default("pending")
-  notes         String?
-  paymentUrl    String?
-  externalId    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  customer      User      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  deviceId      String?
-  device        Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
-  payments      Payment[]
+  billNumber      String   @id @map("billNumber")
+  id_user         String   @db.Text // Ini P0001
+  customer_number String   @db.Text 
+  billingPeriod   String   @map("billingPeriod")
+  billingDate     DateTime @map("billingDate")
+  dueDate         DateTime @map("dueDate")
+  waterUsage      Float    @map("waterUsage")
+  unitPrice       Float    @map("unitPrice")
+  totalAmount     Float    @map("totalAmount")
+  status          String
+  notes           String?
+  createdAt       DateTime @default(now()) @map("createdAt")
+  updatedAt       DateTime @updatedAt @map("updatedAt")
+  UID             String   @db.Text 
+  externalId      String?  @map("externalId")
+  paymentUrl      String?  @map("paymentUrl")
+
+  // hubungkan id_user di Bill ke customer_number di User
+  customer        User     @relation(fields: [id_user], references: [customer_number])
+  
+  device          Device?  @relation(fields: [UID], references: [uid])
+  payments        Payment[]
 
   @@map("bills")
 }
 
 model Payment {
-  id              String   @id @default(uuid())
-  billId          String
+  referenceNumber String   @id @map("referenceNumber") // PAY-INV-...
+  id_user         String   @db.Text                    // P0001
+  billNumber      String   @map("billNumber")
   amount          Float
   paymentMethod   String
-  referenceNumber String
   status          String   @default("pending")
-  proofUrl        String?
-  description     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  bill            Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  bill            Bill     @relation(fields: [billNumber], references: [billNumber], onDelete: Cascade)
 
   @@map("payments")
 }
