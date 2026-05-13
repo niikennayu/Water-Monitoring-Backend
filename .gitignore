@@ -39,3 +39,6 @@ Thumbs.db
 
 # Temporary files (Claude / AI tools)
 tmpclaude-*
+
+# Firebase Secret
+src/config/firebase-service-account.json
