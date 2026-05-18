@@ -42,3 +42,7 @@ tmpclaude-*
 
 # Firebase Secret
 src/config/firebase-service-account.json
+
+# AI and Data Science temporary files
+final_lstm_autoencoder.keras
+app.py

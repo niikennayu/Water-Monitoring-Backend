@@ -16,8 +16,7 @@ export class IotService {
 
     // 2. Cari data device di PostgreSQL berdasarkan UID (Sensor ID)
     const device = await prisma.device.findUnique({
-      where: { uid: UID },
-      include: { user: true }
+      where: { uid: UID }
     });
 
     if (!device) {
@@ -29,9 +28,9 @@ export class IotService {
     const waterUsage = await prisma.waterUsage.create({
       data: {
         id_user: device.deviceId, // Isinya P0001 (dari kolom deviceId di tabel Device)
-        UID: device.uid,         // Isinya 4898-...
+        UID: device.uid,
         flowRate: parseFloat(flowRate) || 0,
-        cumulative: BigInt(Math.round(cumulative)), // Schema kita pakai BigInt
+        cumulative: BigInt(Math.round(cumulative)),
         // volume & forward/backward bisa ditambahkan jika perlu di schema
       }
     });
@@ -61,14 +60,14 @@ export class IotService {
     const simulationPromises = simulatedUserIds.map(async (userId) => {
       // Cari UID dummy untuk user ini
       const device = await prisma.device.findUnique({ where: { deviceId: userId } });
-      
+
       if (device) {
         return prisma.waterUsage.create({
           data: {
             id_user: userId,
             UID: device.uid,
             flowRate: Math.random() * 10,
-            cumulative: BigInt(1000 + Math.floor(Math.random() * 100)), 
+            cumulative: BigInt(1000 + Math.floor(Math.random() * 100)),
           }
         });
       }
