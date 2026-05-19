@@ -46,6 +46,7 @@ export class AuthService {
     // Create user with role "customer"
     const user = await prisma.user.create({
       data: {
+        id_user: crypto.randomUUID(),
         email,
         password: hashedPassword,
         name: name || null,
@@ -55,7 +56,7 @@ export class AuthService {
         customer_number: customerNumber,
       },
       select: {
-        id: true,
+        id_user: true,
         email: true,
         name: true,
         role: true,
@@ -66,10 +67,10 @@ export class AuthService {
       },
     });
 
-    Logger.info('User registered successfully', { userId: user.id, email: user.email });
+    Logger.info('User registered successfully', { userId: user.id_user, email: user.email });
 
     // Generate JWT token (includes role for RBAC)
-    const token = this.generateToken(user.id, user.email, user.role);
+    const token = this.generateToken(user.id_user, user.email, user.role);
 
     return { user, token };
   }
@@ -102,10 +103,10 @@ export class AuthService {
       throw new AppError('Invalid credentials', 401);
     }
 
-    Logger.info('User logged in successfully', { userId: user.id, email: user.email });
+    Logger.info('User logged in successfully', { userId: user.id_user, email: user.email });
 
     // Generate JWT token (includes role for RBAC)
-    const token = this.generateToken(user.id, user.email, user.role);
+    const token = this.generateToken(user.id_user, user.email, user.role);
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
@@ -156,9 +157,9 @@ export class AuthService {
   static async getCurrentUser(userId) {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { id_user: userId },
         select: {
-          id: true,
+          id_user: true,
           email: true,
           name: true,
           role: true,
