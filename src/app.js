@@ -18,6 +18,11 @@ import paymentRoutes from './routes/payment.js';
 
 dotenv.config();
 
+// Polyfill untuk serialize BigInt ke JSON secara global
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
 const app = express();
 
 // --- 1. MIDDLEWARE KEAMANAN & LOGGING ---

@@ -12,6 +12,6 @@ const router = express.Router();
  * (no separate apiKeyMiddleware needed — controller validates deviceId ↔ apiKey match)
  */
 router.post('/water-usage', IoTController.sendWaterUsage);
-router.get('/:deviceId', IoTController.getWaterUsageByDevice);
+router.get('/:UID', IoTController.getWaterUsageByDevice);
 
 export default router;
