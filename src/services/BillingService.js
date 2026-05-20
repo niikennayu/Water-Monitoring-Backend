@@ -3,17 +3,17 @@ import { AppError } from '../middleware/errorHandler.js';
 import { Invoice } from '../config/xendit.js';
 
 export class BillingService {
-  static async generateBillForDevice(uid, unitPrice = 12500) {
-    // 1. Cari data device berdasarkan UID
+  static async generateBillForDevice(deviceId, unitPrice = 12500) {
+    // 1. Cari data device berdasarkan deviceId
     const device = await prisma.device.findUnique({
-      where: { uid: uid }
+      where: { deviceId: deviceId }
     });
 
     if (!device) throw new AppError('Device not found', 404);
 
     // 2. Ambil data penggunaan air terakhir
     const lastUsage = await prisma.waterUsage.findFirst({
-      where: { UID: uid },
+      where: { UID: device.uid },
       orderBy: { timestamp: 'desc' }
     });
 
@@ -46,7 +46,7 @@ export class BillingService {
         data: {
           externalId: String(billNumber), // Coba camelCase
           amount: Number(finalAmount),
-          description: `Tagihan Air UID: ${uid}`,
+          description: `Tagihan Air UID: ${device.uid}`,
           payerEmail: "niken.ayu@example.com",
           invoiceDuration: 86400, // Gunakan Number bukan String
           currency: "IDR"
@@ -76,7 +76,7 @@ export class BillingService {
         unitPrice: unitPrice,
         totalAmount: totalAmount,
         status: 'PENDING',
-        UID: uid,
+        UID: device.uid,
         externalId: xenditInvoice.id,
         paymentUrl: xenditInvoice.invoiceUrl
       }
