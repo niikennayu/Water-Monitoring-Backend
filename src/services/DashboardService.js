@@ -27,7 +27,7 @@ export class DashboardService {
 
     return {
       totalUnits: totalDevices,
-      totalConsumption: Math.round((usageStats._sum.forward || 0) * 100) / 100,
+      totalConsumption: Math.round((Number(usageStats._sum.forward || 0n)) * 100) / 100,
       totalRevenue: Math.round(revenueStats._sum.totalAmount || 0),
       locationOverview: locationStats
     };
@@ -56,7 +56,7 @@ export class DashboardService {
       name: device.name,
       location: device.location,
       status: device.status,
-      totalUsage: Math.round((usageStats._sum.forward || 0) * 100) / 100,
+      totalUsage: Math.round((Number(usageStats._sum.forward || 0n)) * 100) / 100,
       latestReading: device.waterUsages[0] || null
     };
   }
