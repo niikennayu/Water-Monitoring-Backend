@@ -35,29 +35,28 @@ export class DashboardService {
 
   static async getDeviceStats(deviceId) {
     const device = await prisma.device.findUnique({
-      where: { id: deviceId },
-      include: {
-        waterUsages: {
-          orderBy: { createdAt: 'desc' },
-          take: 1
-        }
-      }
+      where: { deviceId: deviceId }
     });
 
     if (!device) throw new AppError('Device not found', 404);
 
     const usageStats = await prisma.waterUsage.aggregate({
-      where: { deviceId },
+      where: { id_user: deviceId },
       _sum: { forward: true }
     });
 
+    const latestReading = await prisma.waterUsage.findFirst({
+      where: { id_user: deviceId },
+      orderBy: { timestamp: 'desc' }
+    });
+
     return {
-      id: device.id,
+      id: device.deviceId,
       name: device.name,
       location: device.location,
       status: device.status,
       totalUsage: Math.round((Number(usageStats._sum.forward || 0n)) * 100) / 100,
-      latestReading: device.waterUsages[0] || null
+      latestReading: latestReading || null
     };
   }
 }
