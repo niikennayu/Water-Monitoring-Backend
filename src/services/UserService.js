@@ -2,6 +2,7 @@ import prisma from '../config/db.js';
 import { AppError } from '../middleware/errorHandler.js';
 import Logger from '../utils/logger.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 // Service layer - contains business logic
 export class UserService {
@@ -9,7 +10,7 @@ export class UserService {
     try {
       const users = await prisma.user.findMany({
         select: {
-          id: true,
+          id_user: true,
           email: true,
           name: true,
           role: true,
@@ -32,9 +33,9 @@ export class UserService {
   static async getUserById(id) {
     try {
       const user = await prisma.user.findUnique({
-        where: { id },
+        where: { id_user: id },
         select: {
-          id: true,
+          id_user: true,
           email: true,
           name: true,
           role: true,
@@ -63,7 +64,7 @@ export class UserService {
       const user = await prisma.user.findUnique({
         where: { customer_number },
         select: {
-          id: true,
+          id_user: true,
           email: true,
           name: true,
           role: true,
@@ -96,6 +97,7 @@ export class UserService {
 
       const user = await prisma.user.create({
         data: {
+          id_user: crypto.randomUUID(),
           email,
           name,
           address,
@@ -105,7 +107,7 @@ export class UserService {
           customer_number: customerNumber
         },
         select: {
-          id: true,
+          id_user: true,
           email: true,
           name: true,
           role: true,
@@ -116,7 +118,7 @@ export class UserService {
         }
       });
 
-      Logger.info('User created', { userId: user.id, email: user.email });
+      Logger.info('User created', { userId: user.id_user, email: user.email });
       return user;
     } catch (error) {
       Logger.error('Detailed Error creating user:', error);
@@ -130,13 +132,13 @@ export class UserService {
   static async updateUser(id, data) {
     try {
       const user = await prisma.user.update({
-        where: { id },
+        where: { id_user: id },
         data: {
           ...(data.email && { email: data.email }),
           ...(data.name && { name: data.name })
         },
         select: {
-          id: true,
+          id_user: true,
           email: true,
           name: true,
           role: true,
@@ -147,7 +149,7 @@ export class UserService {
         }
       });
 
-      Logger.info('User updated', { userId: user.id });
+      Logger.info('User updated', { userId: user.id_user });
       return user;
     } catch (error) {
       if (error.code === 'P2025') {
@@ -161,7 +163,7 @@ export class UserService {
   static async deleteUser(id) {
     try {
       await prisma.user.delete({
-        where: { id }
+        where: { id_user: id }
       });
 
       Logger.info('User deleted', { userId: id });
