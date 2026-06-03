@@ -7,6 +7,10 @@ import Logger from '../utils/logger.js';
  * JWT payload sekarang berisi { id, email, role } — role di-attach ke req.user.
  */
 export const authMiddleware = (req, res, next) => {
+  console.log(
+  "AUTH HEADER:",
+  req.headers.authorization
+);
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;

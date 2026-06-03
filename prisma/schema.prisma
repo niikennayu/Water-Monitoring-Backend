@@ -8,103 +8,156 @@ datasource db {
 }
 
 model User {
-  id_user         String   @id
+  id              String   @id @default(uuid())
+
   email           String   @unique
   name            String?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
   password        String
+
   customer_number String?  @unique
   address         String?
   phone           String?
+
   role            String   @default("customer")
+
+  // RESET PASSWORD
+  resetToken       String?
+  resetTokenExpiry DateTime?
+
+  // RELATION
+  devices         Device[]
+  bills           Bill[]
+  waterUsages WaterUsage[]
 
   @@map("users")
 }
 
 model Device {
-  uid       String    @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar(16)
-  deviceId  String    @unique @db.VarChar(16)
-  dev_name  String?   @db.VarChar(100)
-  location  String?   @db.VarChar(100)
-  createdAt DateTime? @default(now()) @db.Timestamp(6)
-  name      String?   @db.VarChar(255)
+  id          String   @id
+
+  userId      String
+
+  name        String
+  location    String?
+
+  createdAt   DateTime @default(now())
+
+  status      String?
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  data        WaterQuality[]
+  waterUsages WaterUsage[]
 
   @@map("devices")
 }
-
 model WaterQuality {
   id              String   @id @default(uuid())
+
   temperature     Float
   ph              Float
   turbidity       Float
   dissolvedOxygen Float
+
   timestamp       DateTime @default(now())
   createdAt       DateTime @default(now())
+
   deviceId        String
+
+  device          Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@map("water_quality")
 }
 
 model WaterUsage {
-  id_user    String    @db.VarChar(10)
-  UID        String    @db.VarChar(16)
+  id         String   @id @default(uuid())
+
   flowRate   Float?
-  volume     BigInt?
-  forward    BigInt?
-  backward   BigInt?
-  cumulative BigInt?
-  timestamp  DateTime? @default(now()) @db.Timestamp(6)
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  volume     Float?
+
+  forward    Float
+  backward   Float    @default(0)
+
+  cumulative Float
+
+  deviceId   String
+  userId String
+
+  timestamp  DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  device     Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("water_usage")
 }
 
 model Bill {
-  id_user         String
+  id              String   @id @default(uuid())
+
+  userId          String  
+
   customer_number String
-  billNumber      String    @id @map("billNumber")
-  billingPeriod   String    @map("billingPeriod")
-  billingDate     DateTime  @map("billingDate") @db.Timestamp(6)
-  dueDate         DateTime  @map("dueDate") @db.Timestamp(6)
-  waterUsage      Float     @map("waterUsage")
-  unitPrice       Float     @map("unitPrice")
-  totalAmount     Float     @map("totalAmount")
+
+  billNumber      String   @unique
+  billingPeriod   String
+
+  billingDate     DateTime
+  dueDate         DateTime
+
+  waterUsage      Float
+  unitPrice       Float
+  totalAmount     Float
+
   status          String
   notes           String?
-  createdAt       DateTime  @default(now()) @map("createdAt") @db.Timestamp(6)
-  updatedAt       DateTime  @default(now()) @updatedAt @map("updatedAt") @db.Timestamp(6)
+
   UID             String?
-  externalId      String?   @map("externalId")
-  paymentUrl      String?   @map("paymentUrl")
+  externalId      String?
+  paymentUrl      String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   payments        Payment[]
 
   @@map("bills")
 }
 
 model Payment {
-  referenceNumber String    @id @map("referenceNumber")
-  id_user         String
-  billNumber      String    @map("billNumber")
+  id              String   @id @default(uuid())
+
+  billId          String
+
   amount          Float
+
   paymentMethod   String
-  status          String    @default("pending")
-  createdAt       DateTime? @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime? @default(now()) @updatedAt @db.Timestamp(6)
-  bill            Bill      @relation(fields: [billNumber], references: [billNumber], onDelete: Cascade, onUpdate: NoAction, map: "fk_bill_payment")
+
+  referenceNumber String   @unique
+
+  status          String   @default("pending")
+
+  proofUrl        String?
+  description     String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  bill            Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
 
-model water_usage_data {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_user    String    @db.VarChar(10)
-  UID        String    @db.VarChar(16)
-  flowRate   Float?    @default(0)
-  volume     BigInt?   @default(0)
-  forward    BigInt?   @default(0)
-  backward   BigInt?   @default(0)
-  cumulative BigInt?   @default(0)
-  timestamp  DateTime? @default(now()) @db.Timestamp(6)
-  createdAt  DateTime? @default(now()) @db.Timestamp(6)
+model UnitPrice {
+  id        Int      @id @default(autoincrement())
+  price     Int
+  createdAt DateTime @default(now())
+
+  @@map("unit_price")
 }

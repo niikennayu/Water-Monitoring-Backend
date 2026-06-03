@@ -17,4 +17,9 @@ router.get('/my-bills', authMiddleware, BillingController.getMyBills);
 // POST /api/v1/billing/generate - Generate new bill
 router.post('/generate', authMiddleware, BillingController.generateBill);
 
+router.get(
+  "/user/:id",
+  BillingController.getUserBills
+);
+
 export default router;

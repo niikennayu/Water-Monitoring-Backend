@@ -2,19 +2,23 @@ import prisma from '../config/db.js';
 import crypto from 'crypto';
 
 export class DeviceService {
-  static async createDevice(id_user, data) {
+  static async createDevice(userId, data) {
+    const id = "dev-" + crypto.randomBytes(4).toString('hex'); // Generate ID unik e.g., dev-8a4b2c1d
+
     return prisma.device.create({
       data: {
-        uid: data.uid,
-        deviceId: id_user.substring(0, 10),
+        id,
         name: data.name,
+        location: data.location,
+        status: "ACTIVE",
+        userId,
       },
     });
   }
 
-  static async getAllDevices(id_user) {
+  static async getAllDevices(userId) {
     return prisma.device.findMany({
-      where: { deviceId: id_user.substring(0, 10) },
+      where: { userId },
     });
   }
 }

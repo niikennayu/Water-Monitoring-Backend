@@ -46,7 +46,6 @@ export class AuthService {
     // Create user with role "customer"
     const user = await prisma.user.create({
       data: {
-        id_user: crypto.randomUUID(),
         email,
         password: hashedPassword,
         name: name || null,
@@ -56,7 +55,7 @@ export class AuthService {
         customer_number: customerNumber,
       },
       select: {
-        id_user: true,
+        id: true,
         email: true,
         name: true,
         role: true,
@@ -67,10 +66,10 @@ export class AuthService {
       },
     });
 
-    Logger.info('User registered successfully', { userId: user.id_user, email: user.email });
+    Logger.info('User registered successfully', { userId: user.id, email: user.email });
 
     // Generate JWT token (includes role for RBAC)
-    const token = this.generateToken(user.id_user, user.email, user.role);
+    const token = this.generateToken(user.id, user.email, user.role);
 
     return { user, token };
   }
@@ -79,44 +78,60 @@ export class AuthService {
    * Login user and return user data with role and customer_number.
    * @param {Object} data - { email, password }
    */
-  static async login(data) {
-    const { email, password } = data;
+  static async login({ email, password }) {
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
 
-    // Validate input
-    if (!email || !password) {
-      throw new AppError('Email and password are required', 400);
-    }
-
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      throw new AppError('Invalid credentials', 401);
-    }
-
-    // Compare passwords
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      throw new AppError('Invalid credentials', 401);
-    }
-
-    Logger.info('User logged in successfully', { userId: user.id_user, email: user.email });
-
-    // Generate JWT token (includes role for RBAC)
-    const token = this.generateToken(user.id_user, user.email, user.role);
-
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-
-    return {
-      user: userWithoutPassword,
-      token,
-    };
+  if (!user) {
+    throw new AppError('Email tidak ditemukan', 404);
   }
 
+  // cek akun sudah aktif atau belum
+  if (!user.isActive) {
+    throw new AppError(
+      'Akun belum diaktivasi',
+      401
+    );
+  }
+
+  // cek password
+  const isPasswordValid = await bcrypt.compare(
+    password,
+    user.password
+  );
+
+  if (!isPasswordValid) {
+    throw new AppError(
+      'Password salah',
+      401
+    );
+  }
+
+  // generate JWT login
+  const token = jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '7d',
+    }
+  );
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      unit: user.unit,
+    },
+  };
+}
   /**
    * Generate JWT token with user id, email, and role.
    */
@@ -136,19 +151,38 @@ export class AuthService {
    * Verify and decode JWT token.
    */
   static verifyToken(token) {
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      return decoded;
-    } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        throw new AppError('Token has expired', 401);
-      }
-      if (error.name === 'JsonWebTokenError') {
-        throw new AppError('Invalid token', 401);
-      }
-      throw new AppError('Token verification failed', 401);
+  try {
+
+    console.log("TOKEN MASUK:", token);
+    console.log("JWT SECRET:", process.env.JWT_SECRET);
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    console.log("DECODED:", decoded);
+
+    return decoded;
+
+  } catch (error) {
+
+    console.log("VERIFY ERROR:", error.message);
+
+    if (error.name === 'TokenExpiredError') {
+      throw new AppError('Token has expired', 401);
     }
+
+    if (error.name === 'JsonWebTokenError') {
+      throw new AppError('Invalid token', 401);
+    }
+
+    throw new AppError(
+      'Token verification failed',
+      401
+    );
   }
+}
 
   /**
    * Get current user profile including role, customer_number, address, and phone.
@@ -157,9 +191,9 @@ export class AuthService {
   static async getCurrentUser(userId) {
     try {
       const user = await prisma.user.findUnique({
-        where: { id_user: userId },
+        where: { id: userId },
         select: {
-          id_user: true,
+          id: true,
           email: true,
           name: true,
           role: true,

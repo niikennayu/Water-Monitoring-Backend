@@ -1,3 +1,4 @@
+import prisma from '../config/db.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { BillingService } from '../services/BillingService.js';
 
@@ -30,4 +31,38 @@ export class BillingController {
     const bills = await BillingService.getBillsByUserId(userId);
     res.success(bills, 'Your bills fetched successfully', 200);
   });
+
+  static async getUserBills(req, res) {
+
+  try {
+
+    const bills =
+      await prisma.bill.findMany({
+        where: {
+          userId:
+            req.params.id
+        },
+        orderBy: {
+          billingDate: "desc"
+        },
+        take: 3
+      });
+
+    return res.json({
+      status: "success",
+      data: bills
+    });
+
+  } catch (error) {
+
+  console.error(error);
+
+  return res.status(500).json({
+    message: "Failed to load bills",
+    error: error.message
+  });
+
+}
+
+}
 }

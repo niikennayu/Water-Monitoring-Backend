@@ -27,7 +27,7 @@ export class DashboardService {
 
     return {
       totalUnits: totalDevices,
-      totalConsumption: Math.round((Number(usageStats._sum.forward || 0n)) * 100) / 100,
+      totalConsumption: Math.round((usageStats._sum.forward || 0) * 100) / 100,
       totalRevenue: Math.round(revenueStats._sum.totalAmount || 0),
       locationOverview: locationStats
     };
@@ -35,28 +35,29 @@ export class DashboardService {
 
   static async getDeviceStats(deviceId) {
     const device = await prisma.device.findUnique({
-      where: { deviceId: deviceId }
+      where: { id: deviceId },
+      include: {
+        waterUsages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
     });
 
     if (!device) throw new AppError('Device not found', 404);
 
     const usageStats = await prisma.waterUsage.aggregate({
-      where: { id_user: deviceId },
+      where: { deviceId },
       _sum: { forward: true }
     });
 
-    const latestReading = await prisma.waterUsage.findFirst({
-      where: { id_user: deviceId },
-      orderBy: { timestamp: 'desc' }
-    });
-
     return {
-      id: device.deviceId,
+      id: device.id,
       name: device.name,
       location: device.location,
       status: device.status,
-      totalUsage: Math.round((Number(usageStats._sum.forward || 0n)) * 100) / 100,
-      latestReading: latestReading || null
+      totalUsage: Math.round((usageStats._sum.forward || 0) * 100) / 100,
+      latestReading: device.waterUsages[0] || null
     };
   }
 }
